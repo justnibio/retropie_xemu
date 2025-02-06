@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+rp_module_id="xemu"
+rp_module_desc="Xemu - Original Xbox Emulator (Flatpak)"
+rp_module_help="ROM Extensions: .iso .xbe\n\nAssicurati che Flatpak sia installato e configurato correttamente."
+rp_module_licence="GPL https://xemu.app/"
+rp_module_section="exp"
+rp_module_flags=""
+
+function depends_xemu() {
+    echo "Verifica dell'installazione di Flatpak..."
+    if ! command -v flatpak &> /dev/null; then
+        echo "Flatpak non è installato. Installazione in corso..."
+        sudo apt update
+        sudo apt install -y flatpak
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    fi
+}
+
+function install_bin_xemu() {
+    echo "Installazione di Xemu tramite Flatpak..."
+    flatpak install -y flathub app.xemu.xemu
+}
+
+function configure_xemu() {
+    echo "Configurazione di Xemu in RetroPie..."
+    mkRomDir "xbox"
+
+    addEmulator 0 "$md_id" "xbox" "XINIT-WM:MESA_LOADER_DRIVER_OVERRIDE=zink LIBGL_ALWAYS_SOFTWARE=1 flatpak run app.xemu.xemu %ROM%"
+    addEmulator 1 "$md_id-guionly" "xbox" "XINIT-WM:MESA_LOADER_DRIVER_OVERRIDE=zink LIBGL_ALWAYS_SOFTWARE=1 flatpak run app.xemu.xemu"
+    addSystem "xbox"
+
+    # Concedi i permessi per accedere ai file BIOS e ROM
+    flatpak override --user app.xemu.xemu --filesystem=/home/pi/RetroPie/BIOS/xbox
+    flatpak override --user app.xemu.xemu --filesystem=/home/pi/RetroPie/roms/xbox
+
+    # Assicurati che i file BIOS e l'HDD non siano in sola lettura
+    sudo chmod 666 /home/pi/RetroPie/BIOS/xbox/xbox_hdd.qcow2 2>/dev/null
+    sudo chown pi:pi /home/pi/RetroPie/BIOS/xbox/xbox_hdd.qcow2 2>/dev/null
+    sudo chmod -R 777 /home/pi/RetroPie/BIOS/xbox 2>/dev/null
+
+    echo "Configurazione completata."
+}
+
+function remove_xemu() {
+    echo "Rimozione di Xemu Flatpak..."
+    flatpak uninstall -y app.xemu.xemu
+}
