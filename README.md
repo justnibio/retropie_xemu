@@ -15,7 +15,7 @@ switch_fullname="XBOX"
 
 ## Install
 
-After that, install the Lime3ds setup script with:
+After that, install the Xemu setup script with:
 
 ```bash
 sudo apt install -y flatpak
